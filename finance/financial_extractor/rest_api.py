@@ -4,16 +4,15 @@ from rest_framework import status
 from .models import Transcript, FinancialData
 from .serializers import TranscriptSerializer, FinancialDataSerializer
 from django.conf import settings
-# from .utils import process_transcript
 
 class TranscriptUploadView(APIView):
     def post(self, request, format=None):
         # TODO: Implement authorization, on who can upload.
-        # TODO: Implement file size validation.
         serializer = TranscriptSerializer(data=request.data)
         if serializer.is_valid():
             transcript_instance = serializer.save()
-            # process_transcript(transcript_instance)
+            from .utils import process_transcript 
+            process_transcript(transcript_instance)
             return Response({'message': 'File processed successfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

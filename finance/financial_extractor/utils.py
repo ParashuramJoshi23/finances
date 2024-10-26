@@ -16,7 +16,7 @@ class CategorizedSentence(BaseModel):
     category: str = Field(description="One of Assets, Expenditures, Income, or Unclassified")
     fact_text: str = Field(description="The original sentence")
 
-    @validator('category')
+    @validator('category', allow_reuse=True)
     def validate_category(cls, v):
         valid_categories = ['Assets', 'Expenditures', 'Income', 'Unclassified']
         if v not in valid_categories:
@@ -29,42 +29,46 @@ parser = PydanticOutputParser(pydantic_object=CategorizedSentence)
 # Define the prompt template
 prompt_template = PromptTemplate(
     template="""
-You are an expert financial analyst.
-
+You are analyzing a conversation between a wealth manager and a client.
+wealth manager is denoted by IFA and client is denoted by Mr. Thompson.
 Classify the following sentence into one of the categories: "Assets", "Expenditures", "Income", or "Unclassified".
 
 Sentence: "{sentence}"
-
 Return the result in JSON format:
-
 {format_instructions}
 """,
     input_variables=["sentence"],
     partial_variables={"format_instructions": parser.get_format_instructions()},
 )
 
-# Initialize the LLM with your OpenAI API key
-llm = OpenAI(temperature=0)
-
-# Create the chain
-chain = LLMChain(llm=llm, prompt=prompt_template)
 
 def process_transcript(transcript_instance):
     # Read the transcript file
+    
     transcript_path = transcript_instance.file.path
     with open(transcript_path, 'r', encoding='utf-8') as file:
         transcript_text = file.read()
-
+    
     # Split transcript into sentences
     sentences = sent_tokenize(transcript_text)
-
+    wealth_manager = "IFA"
+    client = "Mr. Thompson"
     # Process each sentence
     for sentence in sentences:
         # Clean and skip empty sentences
+        if wealth_manager in sentence:
+            sentence.split(wealth_manager)[1]
+        if client in sentence:
+            sentence.split(client)[1]
+
         sentence = sentence.strip()
         if not sentence:
             continue
-
+        
+        # Initialize the LLM with your OpenAI API key
+        llm = OpenAI(temperature=0)
+        # Create the chain
+        chain = LLMChain(llm=llm, prompt=prompt_template)
         # Run the chain
         try:
             output = chain.run(sentence=sentence)
