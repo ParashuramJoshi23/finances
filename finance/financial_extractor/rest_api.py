@@ -10,10 +10,10 @@ class TranscriptUploadView(APIView):
         # TODO: Implement authorization, on who can upload.
         serializer = TranscriptSerializer(data=request.data)
         if serializer.is_valid():
-            transcript_instance = serializer.save()
+            transcript_instance : Transcript = serializer.save()
             from .utils import process_transcript 
             process_transcript(transcript_instance)
-            return Response({'message': 'File processed successfully'}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'File processed successfully', 'transcript_id': transcript_instance.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class FinancialDataListView(APIView):

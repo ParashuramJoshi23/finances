@@ -1,12 +1,15 @@
 import os
 from nltk.tokenize import sent_tokenize
 import nltk
-from langchain import OpenAI, LLMChain
+from langchain import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field, validator
 from .models import FinancialData
 from django.conf import settings
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # Ensure NLTK data is downloaded
 nltk.download('punkt')
@@ -65,22 +68,26 @@ def process_transcript(transcript_instance):
         if not sentence:
             continue
         
-        # Initialize the LLM with your OpenAI API key
-        llm = OpenAI(temperature=0)
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+
         # Create the chain
         chain = LLMChain(llm=llm, prompt=prompt_template)
+        import openai
         # Run the chain
         try:
             output = chain.run(sentence=sentence)
             # Parse the output
             result = parser.parse(output)
-            if result.category != "Unclassified":
-                # Save to database
-                FinancialData.objects.create(
-                    transcript=transcript_instance,
-                    category=result.category,
-                    fact_text=result.fact_text,
-                )
+            # Save to database
+            FinancialData.objects.create(
+                transcript=transcript_instance,
+                category=result.category,
+                fact_text=result.fact_text,
+            )
+            print(f"Processed sentence: {sentence}")
         except Exception as e:
             print(f"Error processing sentence: {sentence}")
             print(e)
+        except openai.error.OpenAIError as e:
+            print("Successfully accessed openai.error:", e)
