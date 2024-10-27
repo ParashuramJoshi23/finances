@@ -28,6 +28,7 @@ Setup required.
 2. pip install requirements.txt
 3. create db.sqlite3 file
 4. create /media/transcript folder where uploaded file can sit.
+5. Add open_api_key in env
 
 Further improvements that can be done.
 1. Spin off process_transcription as a task.
